@@ -225,7 +225,6 @@ static void dcode_png_writer(png_structp png_ptr, png_bytep data, png_size_t len
 
 static int dcode_write_to_png(QRcode *qrcode, int size, int margin, char **bin_data)
 {
-    struct png_mem_encode state;
     state.buffer = NULL;
     state.size = 0;
 
@@ -270,7 +269,7 @@ static int dcode_write_to_png(QRcode *qrcode, int size, int margin, char **bin_d
     //
     // fseek(fp, 0, SEEK_SET);
     // ftruncate(fileno(fp), 0);
-    png_set_write_fn(png_ptr, &state, dcode_png_writer, NULL);
+    png_set_write_fn(png_ptr, NULL, dcode_png_writer, NULL);
 
     // png_init_io(png_ptr, fp);
     png_set_IHDR(png_ptr, info_ptr,
@@ -331,17 +330,13 @@ static int dcode_write_to_png(QRcode *qrcode, int size, int margin, char **bin_d
 
     efree(row);
 
-    if (state.buffer) {
-        // *bin_data = estrndup(state.buffer, state.size);
-        efree(state.buffer);
-        // return 1;
-    }
-
     if (ds->buffer) {
-        *bin_data = estrndup(ds->buffer, 1);
+        *bin_data = estrndup(ds->buffer, ds->size);
         efree(ds->buffer);
+        efree(ds);
         return 1;
     }
+    efree(ds);
     return 0;
 }
 
