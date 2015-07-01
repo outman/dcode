@@ -27,10 +27,11 @@
 #define DCODE_MICROTIME_SIZE 100
 #define DCODE_MICRO_IN_SEC 1000000.00
 
-struct png_mem_encode {
+typedef struct _png_mem_encode {
     char *buffer;
     size_t size;
-};
+} png_mem_encode;
+
 #endif
 /*
  * Local variables:

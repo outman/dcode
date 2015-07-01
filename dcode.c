@@ -203,19 +203,17 @@ static long dcode_time()
 
 static void dcode_png_writer(png_structp png_ptr, png_bytep data, png_size_t length)
 {
-    struct png_mem_encode* p = (struct png_mem_encode*) png_get_io_ptr(png_ptr);
+    png_mem_encode* p = (png_mem_encode*) png_get_io_ptr(png_ptr);
     size_t nsize = p->size + length;
+
     if (p->buffer)
-    {
         p->buffer = erealloc(p->buffer, nsize);
-    }
-    else {
+    else
         p->buffer = emalloc(nsize);
-    }
 
     if (!p->buffer)
     {
-        png_error(png_ptr, "Png image write error");
+        png_error(png_ptr, "PNG allocate memory error");
         exit(FAILURE);
     }
 
@@ -223,10 +221,8 @@ static void dcode_png_writer(png_structp png_ptr, png_bytep data, png_size_t len
     p->size += length;
 }
 
-static int dcode_write_to_png(QRcode *qrcode, int size, int margin, char **bin_data)
+static char* dcode_write_to_png(QRcode *qrcode, int size, int margin, int *pp_len)
 {
-    state.buffer = NULL;
-    state.size = 0;
 
     png_structp png_ptr;
     png_infop info_ptr;
@@ -236,108 +232,97 @@ static int dcode_write_to_png(QRcode *qrcode, int size, int margin, char **bin_d
     int realwidth;
 
     realwidth = (qrcode->width + margin * 2) * size;
-
     int row_fill_len = (realwidth + 7) / 8;
-    row = (unsigned char *) emalloc(row_fill_len);
-
-    if (row == NULL)
-    {
-        php_error(E_ERROR, "Failed to allocate memory");
-        return 0;
-    }
 
     png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     if (png_ptr == NULL)
     {
         php_error(E_ERROR, "Failed to initialize PNG writer");
-        return 0;
+        return NULL;
     }
 
     info_ptr = png_create_info_struct(png_ptr);
     if (info_ptr == NULL)
     {
-        php_error(E_ERROR, "Failed to initialize PNG writer");
-        return 0;
+        php_error(E_ERROR, "Failed to initialize PNG info");
+        return NULL;
     }
 
     if (setjmp(png_jmpbuf(png_ptr)))
     {
         png_destroy_write_struct(&png_ptr, &info_ptr);
-        php_error(E_ERROR, "Failed to write PNG image");
-        return 0;
+        php_error(E_ERROR, "Failed to set PNG jmpbuf");
+        return NULL;
     }
-    //
-    // fseek(fp, 0, SEEK_SET);
-    // ftruncate(fileno(fp), 0);
-    png_set_write_fn(png_ptr, NULL, dcode_png_writer, NULL);
 
-    // png_init_io(png_ptr, fp);
-    png_set_IHDR(png_ptr, info_ptr,
-                realwidth, realwidth,
+    row = (unsigned char *) emalloc(row_fill_len);
+    if (row == NULL)
+    {
+        png_destroy_write_struct(&png_ptr, &info_ptr);
+        php_error(E_ERROR, "Failed to allocate memory");
+        return NULL;
+    }
+
+    png_mem_encode state = {NULL, 0};
+    png_set_write_fn(png_ptr, &state, &dcode_png_writer, NULL);
+
+    png_set_IHDR(png_ptr,
+                info_ptr,
+                realwidth,
+                realwidth,
                 1,
                 PNG_COLOR_TYPE_GRAY,
                 PNG_INTERLACE_NONE,
                 PNG_COMPRESSION_TYPE_DEFAULT,
                 PNG_FILTER_TYPE_DEFAULT);
-    png_write_info(png_ptr, info_ptr);
 
-    /* top margin */
-    memset(row, 0xff, row_fill_len);
-    for(y = 0; y < margin * size; y ++)
-    {
+    png_write_info(png_ptr, info_ptr);
+    memset(row, 0xff, (realwidth + 7) / 8);
+    for(y = 0; y < margin * size; y ++) {
         png_write_row(png_ptr, row);
     }
 
-    /* data */
     p = qrcode->data;
-    for(y = 0; y < qrcode->width; y ++)
-    {
+    for(y = 0; y < qrcode->width; y ++) {
         bit = 7;
-        memset(row, 0xff, row_fill_len);
+        memset(row, 0xff, (realwidth + 7) / 8);
         q = row;
         q += margin * size / 8;
         bit = 7 - (margin * size % 8);
-        for(x = 0; x < qrcode->width; x ++)
-        {
-            for(xx = 0; xx < size; xx ++)
-            {
+        for(x = 0; x < qrcode->width; x ++) {
+            for(xx = 0; xx <size; xx ++) {
                 *q ^= (*p & 1) << bit;
                 bit--;
-                if(bit < 0)
-                {
+                if(bit < 0) {
                     q++;
                     bit = 7;
                 }
             }
             p++;
         }
-
-        for(yy = 0; yy < size; yy ++)
-        {
+        for(yy = 0; yy < size; yy ++ ) {
             png_write_row(png_ptr, row);
         }
     }
-    /* bottom margin */
-    memset(row, 0xff, row_fill_len);
-    for(y = 0; y < margin * size; y ++)
-    {
+
+    memset(row, 0xff, (realwidth + 7) / 8);
+    for(y = 0; y < margin * size; y ++) {
         png_write_row(png_ptr, row);
     }
 
     png_write_end(png_ptr, info_ptr);
-    struct png_mem_encode *ds = (struct png_mem_encode*) png_get_io_ptr(png_ptr);
     png_destroy_write_struct(&png_ptr, &info_ptr);
 
     efree(row);
 
-    if (ds->buffer) {
-        *bin_data = estrndup(ds->buffer, ds->size);
-        efree(ds->buffer);
-        efree(ds);
-        return 1;
+    char *bin_data = NULL;
+    if (state.buffer) {
+        bin_data = estrndup(state.buffer, state.size);
+        *pp_len = state.size;
+        efree(state.buffer);
     }
-    efree(ds);
-    return 0;
+
+    return bin_data;
 }
 
 /** {{{ DCode::encrypt($src, $sec_key = "THIS IS SHIT", $sec_rand_key_len = 8, $expire = 0)
@@ -608,16 +593,16 @@ PHP_METHOD(dcode, decrypt)
     if ((expire_time == 0 || (expire_time - dcode_time()) > 0)
         && strcmp(cmp_kb, cmp_md5_h) == 0)
     {
-            ZVAL_STRING(return_value, cmp_kb_md5, 1);
-            efree(cmp_kb_md5);
-            efree(cmp_md5_h);
-            efree(cmp_kb);
-            return;
+        ZVAL_STRING(return_value, cmp_kb_md5, 1);
     }
+    else {
+        ZVAL_BOOL(return_value, 0);
+    }
+
     efree(cmp_kb_md5);
     efree(cmp_md5_h);
     efree(cmp_kb);
-    RETURN_FALSE;
+    return;
 }
 /** }}} */
 
@@ -655,14 +640,15 @@ PHP_METHOD(dcode, qrcode)
         RETURN_FALSE;
     }
 
-    char *bin_data = NULL;
-    int ok = dcode_write_to_png(qcode, 3, 4, &bin_data);
+    int pp_len;
+    char *pp = dcode_write_to_png(qcode, 3, 4, &pp_len);
     QRcode_free(qcode);
     qcode = NULL;
-    if (ok)
+
+    if (pp)
     {
-        ZVAL_STRING(return_value, bin_data, 1);
-        efree(bin_data);
+        ZVAL_STRINGL(return_value, pp, pp_len, 1);
+        efree(pp);
         return;
     }
     else {

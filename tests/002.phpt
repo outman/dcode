@@ -5,7 +5,7 @@ Check for dcode's qrcode functions
 --FILE--
 <?php
 $qrcode = DCode::qrcode("HELLO");
-var_dump($qrcode);
+echo strlen($qrcode);
 ?>
 --EXPECT--
-HELLO
+238
