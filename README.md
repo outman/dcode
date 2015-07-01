@@ -2,11 +2,16 @@
 
 ### It's php extension for encrypt and decrypt , it's implement algorithm of discuz authcode function.
 
+## QRcode
+### It's based on [QR Code encoder](http://fukuchi.org/works/qrencode/), just use a simple api `QRcode_encodeString`
+
 ## Usage
 
 ```php
 DCode::encrypt($src, $key = "THIS IS SHIT", $ckeylength = 8, $expire = 0);
 DCode::decrypt($src, $key = "THIS IS SHIT", $ckeylength = 8);
+$filecontent = DCode::qrcode("HELLO");
+file_put_contents("test.png", $filecontent);
 ```
 
 ## Install
