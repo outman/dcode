@@ -1,0 +1,13 @@
+// $Id$
+// vim:ft=javascript
+
+// If your extension references something external, use ARG_WITH
+// ARG_WITH("dcode", "for dcode support", "no");
+
+// Otherwise, use ARG_ENABLE
+// ARG_ENABLE("dcode", "enable dcode support", "no");
+
+if (PHP_DCODE != "no") {
+	EXTENSION("dcode", "dcode.c");
+}
+
