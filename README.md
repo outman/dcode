@@ -54,4 +54,3 @@ time php dcode.php   2.19s user 0.08s system 99% cpu 2.278 total
 5000000 times decode.php
 116.53s user 4.79s system 92% cpu 2:11.73 total
 ```
-
