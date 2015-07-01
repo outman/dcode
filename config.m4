@@ -59,5 +59,5 @@ if test "$PHP_DCODE" != "no"; then
   dnl
   dnl PHP_SUBST(DCODE_SHARED_LIBADD)
 
-  PHP_NEW_EXTENSION(dcode, dcode.c, $ext_shared)
+  PHP_NEW_EXTENSION(dcode, dcode.c qrencode/bitstream.c qrencode/mask.c qrencode/mmask.c qrencode/mqrspec.c qrencode/qrenc.c qrencode/qrencode.c qrencode/qrinput.c qrencode/qrspec.c qrencode/rscode.c qrencode/split.c, $ext_shared)
 fi

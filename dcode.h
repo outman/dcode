@@ -17,6 +17,8 @@
 */
 
 /* $Id$ */
+#ifndef DCODE_H
+#define DCODE_H
 
 #define DCODE_KEY "THIS IS SHIT"
 #define DCODE_CN "DCode"
@@ -25,6 +27,11 @@
 #define DCODE_MICROTIME_SIZE 100
 #define DCODE_MICRO_IN_SEC 1000000.00
 
+struct png_mem_encode {
+    char *buffer;
+    size_t size;
+};
+#endif
 /*
  * Local variables:
  * tab-width: 4

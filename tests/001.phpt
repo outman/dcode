@@ -1,5 +1,5 @@
 --TEST--
-Check for dcode presence
+Check for dcode's en/decrypt functions
 --SKIPIF--
 <?php if (!extension_loaded("dcode")) print "skip"; ?>
 --FILE--

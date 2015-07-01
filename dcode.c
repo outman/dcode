@@ -19,6 +19,8 @@
 /* $Id$ */
 
 #include <sys/time.h>
+#include <errno.h>
+#include <png.h>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -34,6 +36,7 @@
 #include "ext/standard/base64.h"
 #include "ext/standard/php_string.h"
 #include "Zend/zend_strtod.h"
+#include "qrencode/qrencode.h"
 #include "dcode.h"
 
 /* If you declare any globals in php_dcode.h uncomment this:
@@ -57,7 +60,6 @@ const zend_function_entry dcode_methods[] = {
     PHP_ME(dcode, encrypt, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(dcode, decrypt, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(dcode, qrcode, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-    PHP_ME(dcode, qrcodex, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_FE_END
 };
 /* }}} */
@@ -199,6 +201,143 @@ static long dcode_time()
 }
 /** }}} */
 
+static void dcode_png_writer(png_structp png_ptr, png_bytep data, png_size_t length)
+{
+    struct png_mem_encode* p = (struct png_mem_encode*) png_get_io_ptr(png_ptr);
+    size_t nsize = p->size + length;
+    if (p->buffer)
+    {
+        p->buffer = erealloc(p->buffer, nsize);
+    }
+    else {
+        p->buffer = emalloc(nsize);
+    }
+
+    if (!p->buffer)
+    {
+        png_error(png_ptr, "Png image write error");
+        exit(FAILURE);
+    }
+
+    memcpy(p->buffer + p->size, data, length);
+    p->size += length;
+}
+
+static int dcode_write_to_png(QRcode *qrcode, int size, int margin, char **bin_data)
+{
+    struct png_mem_encode state;
+    state.buffer = NULL;
+    state.size = 0;
+
+    png_structp png_ptr;
+    png_infop info_ptr;
+
+    unsigned char *row, *p, *q;
+    int x, y, xx, yy, bit;
+    int realwidth;
+
+    realwidth = (qrcode->width + margin * 2) * size;
+
+    int row_fill_len = (realwidth + 7) / 8;
+    row = (unsigned char *) emalloc(row_fill_len);
+
+    if (row == NULL)
+    {
+        php_error(E_ERROR, "Failed to allocate memory");
+        return 0;
+    }
+
+    png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if (png_ptr == NULL)
+    {
+        php_error(E_ERROR, "Failed to initialize PNG writer");
+        return 0;
+    }
+
+    info_ptr = png_create_info_struct(png_ptr);
+    if (info_ptr == NULL)
+    {
+        php_error(E_ERROR, "Failed to initialize PNG writer");
+        return 0;
+    }
+
+    if (setjmp(png_jmpbuf(png_ptr)))
+    {
+        png_destroy_write_struct(&png_ptr, &info_ptr);
+        php_error(E_ERROR, "Failed to write PNG image");
+        return 0;
+    }
+    //
+    // fseek(fp, 0, SEEK_SET);
+    // ftruncate(fileno(fp), 0);
+    png_set_write_fn(png_ptr, &state, dcode_png_writer, NULL);
+
+    // png_init_io(png_ptr, fp);
+    png_set_IHDR(png_ptr, info_ptr,
+                realwidth, realwidth,
+                1,
+                PNG_COLOR_TYPE_GRAY,
+                PNG_INTERLACE_NONE,
+                PNG_COMPRESSION_TYPE_DEFAULT,
+                PNG_FILTER_TYPE_DEFAULT);
+    png_write_info(png_ptr, info_ptr);
+
+    /* top margin */
+    memset(row, 0xff, row_fill_len);
+    for(y = 0; y < margin * size; y ++)
+    {
+        png_write_row(png_ptr, row);
+    }
+
+    /* data */
+    p = qrcode->data;
+    for(y = 0; y < qrcode->width; y ++)
+    {
+        bit = 7;
+        memset(row, 0xff, row_fill_len);
+        q = row;
+        q += margin * size / 8;
+        bit = 7 - (margin * size % 8);
+        for(x = 0; x < qrcode->width; x ++)
+        {
+            for(xx = 0; xx < size; xx ++)
+            {
+                *q ^= (*p & 1) << bit;
+                bit--;
+                if(bit < 0)
+                {
+                    q++;
+                    bit = 7;
+                }
+            }
+            p++;
+        }
+
+        for(yy = 0; yy < size; yy ++)
+        {
+            png_write_row(png_ptr, row);
+        }
+    }
+    /* bottom margin */
+    memset(row, 0xff, row_fill_len);
+    for(y = 0; y < margin * size; y ++)
+    {
+        png_write_row(png_ptr, row);
+    }
+
+    png_write_end(png_ptr, info_ptr);
+    png_destroy_write_struct(&png_ptr, &info_ptr);
+
+    efree(row);
+
+    if (state.buffer) {
+        *bin_data = estrndup(state.buffer, 1);
+        efree(state.buffer);
+        return 1;
+    }
+    return 0;
+}
+
 /** {{{ DCode::encrypt($src, $sec_key = "THIS IS SHIT", $sec_rand_key_len = 8, $expire = 0)
     Return False or String */
 PHP_METHOD(dcode, encrypt)
@@ -214,19 +353,19 @@ PHP_METHOD(dcode, encrypt)
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|sll", &src, &src_len, &key, &key_len, &ck_len, &expire) == FAILURE)
     {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "Invalid arguments");
+        php_error_docref(NULL TSRMLS_CC, E_ERROR, "Invalid arguments");
         RETURN_FALSE;
     }
 
     if (ck_len > DCODE_MD5_SIZE || ck_len < 0)
     {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "Invalid arguments sec_rand_key_len must 0-32");
+        php_error_docref(NULL TSRMLS_CC, E_ERROR, "Invalid arguments sec_rand_key_len must 0-32");
         RETURN_FALSE;
     }
 
     if (expire < 0)
     {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "Invalid arguments expire >= 0");
+        php_error_docref(NULL TSRMLS_CC, E_ERROR, "Invalid arguments expire >= 0");
         RETURN_FALSE;
     }
 
@@ -365,13 +504,13 @@ PHP_METHOD(dcode, decrypt)
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|sl", &src, &src_len, &key, &key_len, &ck_len) == FAILURE)
     {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "Invalid arguments");
+        php_error_docref(NULL TSRMLS_CC, E_ERROR, "Invalid arguments");
         RETURN_FALSE;
     }
 
     if (ck_len > DCODE_MD5_SIZE || ck_len < 0)
     {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "Invalid arguments sec_rand_key_len must 0-32");
+        php_error_docref(NULL TSRMLS_CC, E_ERROR, "Invalid arguments sec_rand_key_len must 0-32");
         RETURN_FALSE;
     }
 
@@ -465,7 +604,8 @@ PHP_METHOD(dcode, decrypt)
     efree(cmp_md5);
 
     if ((expire_time == 0 || (expire_time - dcode_time()) > 0)
-        && strcmp(cmp_kb, cmp_md5_h) == 0) {
+        && strcmp(cmp_kb, cmp_md5_h) == 0)
+    {
             ZVAL_STRING(return_value, cmp_kb_md5, 1);
             efree(cmp_kb_md5);
             efree(cmp_md5_h);
@@ -481,12 +621,51 @@ PHP_METHOD(dcode, decrypt)
 
 PHP_METHOD(dcode, qrcode)
 {
+    char *str_encode;
+    int str_encode_len;
 
-}
+    int version = 0;
+    int level   = (int) QR_ECLEVEL_L;
+    int mode    = (int) QR_MODE_KANJI;
+    int casesensitive = 0;
 
-PHP_METHOD(dcode, qrcodex)
-{
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|llll", &str_encode, &str_encode_len, &version, &level, &mode, &casesensitive) == FAILURE) {
+        php_error_docref(NULL TSRMLS_CC, E_ERROR, "Invalid arguments");
+        RETURN_FALSE;
+    }
 
+    QRcode *qcode = NULL;
+    qcode = QRcode_encodeString(str_encode, version, (QRecLevel) level, (QRencodeMode) mode, casesensitive);
+    if (qcode == NULL)
+    {
+        if (errno == EINVAL) {
+            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode::qrcode error, error invalid input object");
+        }
+        else if (errno == ENOMEM) {
+            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode::qrcode error, unable to allocate memory for input objects");
+        }
+        else if (errno == ERANGE) {
+            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode::qrcode error, input data is too large");
+        }
+        else {
+            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode::qrcode error, errno : %d", errno);
+        }
+        RETURN_FALSE;
+    }
+
+    char *bin_data = NULL;
+    int ok = dcode_write_to_png(qcode, 3, 4, &bin_data);
+    QRcode_free(qcode);
+    qcode = NULL;
+    if (ok)
+    {
+        ZVAL_STRING(return_value, bin_data, 1);
+        efree(bin_data);
+        return;
+    }
+    else {
+        RETURN_FALSE;
+    }
 }
 
 /*

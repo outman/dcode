@@ -47,7 +47,6 @@ PHP_MINFO_FUNCTION(dcode);
 PHP_METHOD(dcode, encrypt);
 PHP_METHOD(dcode, decrypt);
 PHP_METHOD(dcode, qrcode);
-PHP_METHOD(dcode, qrcodex);
 
 /*
   	Declare any global variables you may need between the BEGIN
