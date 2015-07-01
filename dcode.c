@@ -326,13 +326,20 @@ static int dcode_write_to_png(QRcode *qrcode, int size, int margin, char **bin_d
     }
 
     png_write_end(png_ptr, info_ptr);
+    struct png_mem_encode ds = (struct png_mem_encode) png_get_io_ptr(png_ptr);
     png_destroy_write_struct(&png_ptr, &info_ptr);
 
     efree(row);
 
     if (state.buffer) {
-        *bin_data = estrndup(state.buffer, 1);
+        // *bin_data = estrndup(state.buffer, state.size);
         efree(state.buffer);
+        // return 1;
+    }
+
+    if (ds.buffer) {
+        *bin_data = estrndup(ds.buffer, 1);
+        efree(ds.buffer);
         return 1;
     }
     return 0;
