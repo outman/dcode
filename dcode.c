@@ -71,6 +71,12 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_dcode_qrcode, 0, 0, 1)
     ZEND_ARG_INFO(0, casesensitive)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_dcode_qrcode8bit, 0, 0, 1)
+    ZEND_ARG_INFO(0, src)
+    ZEND_ARG_INFO(0, version)
+    ZEND_ARG_INFO(0, level)
+ZEND_END_ARG_INFO()
+
 /** }}} */
 
 /* {{{ dcode_functions[]
@@ -697,6 +703,58 @@ PHP_METHOD(dcode, qrcode)
 }
 /** }}} */
 
+/** {{{ DCode::qrcode8bit($string, $version = 0, $level = QR_ECLEVEL_L)
+ * Return qrcode string
+ * example: file_put_contents("test.png", DCode::qrcode8bit("hello"));
+ */
+PHP_METHOD(dcode, qrcode8bit)
+{
+    char *src;
+    int src_len;
+    int version = 0;
+    int level = (int) QR_ECLEVEL_L;
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|ll", &src, &src_len, &version, &level) == FAILURE) {
+        php_error_docref(NULL TSRMLS_CC, E_ERROR, "Invalid arguments");
+        RETURN_FALSE;
+    }
+
+    QRcode *qcode = NULL;
+    qcode = QRcode_encodeString8bit(src, version, (QRecLevel) level);
+    if (qcode == NULL)
+    {
+        if (errno == EINVAL) {
+            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode::qrcode error, error invalid input object");
+        }
+        else if (errno == ENOMEM) {
+            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode::qrcode error, unable to allocate memory for input objects");
+        }
+        else if (errno == ERANGE) {
+            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode::qrcode error, input data is too large");
+        }
+        else {
+            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode::qrcode error, errno : %d", errno);
+        }
+        RETURN_FALSE;
+    }
+
+    int pp_len;
+    char *pp = dcode_write_to_png(qcode, 3, 4, &pp_len);
+    QRcode_free(qcode);
+    qcode = NULL;
+
+    if (pp)
+    {
+        ZVAL_STRINGL(return_value, pp, pp_len, 1);
+        efree(pp);
+        return;
+    }
+    else {
+        RETURN_FALSE;
+    }
+}
+/** }}} */
+
 /** {{{ DCode::encrypt($src, $sec_key = "THIS IS SHIT", $sec_rand_key_len = 8, $expire = 0)
     Return False or String */
 PHP_FUNCTION(dcode_encrypt)
@@ -720,6 +778,16 @@ PHP_FUNCTION(dcode_decrypt)
 PHP_FUNCTION(dcode_qrcode)
 {
     PHP_MN(dcode_qrcode)(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+}
+/** }}} */
+
+/** {{{ DCode::qrcode8bit($string, $version = 0, $level = QR_ECLEVEL_L)
+ * Return qrcode string
+ * example: file_put_contents("test.png", DCode::qrcode8bit("hello"));
+ */
+PHP_FUNCTION(dcode_qrcode8bit)
+{
+    PHP_MN(dcode_qrcode8bit)(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 }
 /** }}} */
 
