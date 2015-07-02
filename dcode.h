@@ -37,7 +37,7 @@ static char* dcode_microtime(char *);
 static long dcode_time();
 static void dcode_png_writer(png_structp, png_bytep, png_size_t);
 static char* dcode_write_to_png(QRcode *, int, int, int *);
-
+static bool dcode_qrcode_error(QRcode * TSRMLS_DC);
 #endif
 /*
  * Local variables:

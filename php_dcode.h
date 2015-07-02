@@ -48,11 +48,13 @@ PHP_FUNCTION(dcode_encrypt);
 PHP_FUNCTION(dcode_decrypt);
 PHP_FUNCTION(dcode_qrcode);
 PHP_FUNCTION(dcode_qrcode8bit);
+PHP_FUNCTION(dcode_qrcodedata);
 
 PHP_METHOD(dcode, encrypt);
 PHP_METHOD(dcode, decrypt);
 PHP_METHOD(dcode, qrcode);
 PHP_METHOD(dcode, qrcode8bit);
+PHP_METHOD(dcode, qrcodedata);
 
 /*
   	Declare any global variables you may need between the BEGIN

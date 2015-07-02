@@ -77,6 +77,12 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_dcode_qrcode8bit, 0, 0, 1)
     ZEND_ARG_INFO(0, level)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_dcode_qrcodedata, 0, 0, 2)
+    ZEND_ARG_INFO(0, size)
+    ZEND_ARG_INFO(0, data)
+    ZEND_ARG_INFO(0, version)
+    ZEND_ARG_INFO(0, level)
+ZEND_END_ARG_INFO()
 /** }}} */
 
 /* {{{ dcode_functions[]
@@ -88,6 +94,7 @@ const zend_function_entry dcode_functions[] = {
     PHP_FE(dcode_decrypt, arginfo_dcode_decrypt)
     PHP_FE(dcode_qrcode, arginfo_dcode_qrcode)
     PHP_FE(dcode_qrcode8bit, arginfo_dcode_qrcode8bit)
+    PHP_FE(dcode_qrcodedata, arginfo_dcode_qrcodedata)
     PHP_FE_END
 };
 
@@ -96,6 +103,7 @@ const zend_function_entry dcode_methods[] = {
     PHP_ME(dcode, decrypt, arginfo_dcode_decrypt, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(dcode, qrcode, arginfo_dcode_qrcode, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(dcode, qrcode8bit, arginfo_dcode_qrcode8bit, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(dcode, qrcodedata, arginfo_dcode_qrcodedata, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_FE_END
 };
 /* }}} */
@@ -366,6 +374,30 @@ static char* dcode_write_to_png(QRcode *qrcode, int size, int margin, int *pp_le
     }
 
     return bin_data;
+}
+/** }}} */
+
+/** {{{ dcode_qrcode_error(QRcode * TSRMLS_DC)
+ *  process qrcode result
+ *  Return TRUE or FALSE */
+static bool dcode_qrcode_error(QRcode *qcode TSRMLS_DC) {
+    if (qcode == NULL)
+    {
+        if (errno == EINVAL) {
+            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode encode error, error invalid input object");
+        }
+        else if (errno == ENOMEM) {
+            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode encode error, unable to allocate memory for input objects");
+        }
+        else if (errno == ERANGE) {
+            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode encode error, input data is too large");
+        }
+        else {
+            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode encode error, errno : %d", errno);
+        }
+        return 0;
+    }
+    return 1;
 }
 /** }}} */
 
@@ -671,23 +703,9 @@ PHP_METHOD(dcode, qrcode)
 
     QRcode *qcode = NULL;
     qcode = QRcode_encodeString(str_encode, version, (QRecLevel) level, (QRencodeMode) mode, casesensitive);
-    if (qcode == NULL)
-    {
-        if (errno == EINVAL) {
-            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode::qrcode error, error invalid input object");
-        }
-        else if (errno == ENOMEM) {
-            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode::qrcode error, unable to allocate memory for input objects");
-        }
-        else if (errno == ERANGE) {
-            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode::qrcode error, input data is too large");
-        }
-        else {
-            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode::qrcode error, errno : %d", errno);
-        }
+    if (!dcode_qrcode_error(qcode TSRMLS_CC)) {
         RETURN_FALSE;
     }
-
     int pp_len;
     char *pp = dcode_write_to_png(qcode, 3, 4, &pp_len);
     QRcode_free(qcode);
@@ -723,20 +741,48 @@ PHP_METHOD(dcode, qrcode8bit)
 
     QRcode *qcode = NULL;
     qcode = QRcode_encodeString8bit(src, version, (QRecLevel) level);
-    if (qcode == NULL)
+    if (!dcode_qrcode_error(qcode TSRMLS_CC)) {
+        RETURN_FALSE;
+    }
+
+    int pp_len;
+    char *pp = dcode_write_to_png(qcode, 3, 4, &pp_len);
+    QRcode_free(qcode);
+    qcode = NULL;
+
+    if (pp)
     {
-        if (errno == EINVAL) {
-            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode::qrcode error, error invalid input object");
-        }
-        else if (errno == ENOMEM) {
-            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode::qrcode error, unable to allocate memory for input objects");
-        }
-        else if (errno == ERANGE) {
-            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode::qrcode error, input data is too large");
-        }
-        else {
-            php_error_docref(NULL TSRMLS_CC, E_ERROR, "DCode::qrcode error, errno : %d", errno);
-        }
+        ZVAL_STRINGL(return_value, pp, pp_len, 1);
+        efree(pp);
+        return;
+    }
+    else {
+        RETURN_FALSE;
+    }
+}
+/** }}} */
+
+/** {{{ DCode::qrcodedata($size, $data, $version = 0, $level = QR_ECLEVEL_L)
+ * Encode byte stream (may include '\0') in 8-bit mode.
+ * Return qrcode string
+ * example: file_put_contents("test.png", DCode::qrcodedata(strlen("hello"), "hello"));
+ */
+PHP_METHOD(dcode, qrcodedata)
+{
+    int size;
+    char *data;
+    int version = 0;
+    int level = (int) QR_ECLEVEL_L;
+    int data_len;
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ls|ll", &size, &data, &data_len, &version, &level) == FAILURE) {
+        php_error_docref(NULL TSRMLS_CC, E_ERROR, "Invalid arguments");
+        RETURN_FALSE;
+    }
+
+    QRcode *qcode = NULL;
+    qcode = QRcode_encodeData(size, (const unsigned char*)data, version, (QRecLevel) level);
+    if (!dcode_qrcode_error(qcode TSRMLS_CC)) {
         RETURN_FALSE;
     }
 
@@ -790,6 +836,16 @@ PHP_FUNCTION(dcode_qrcode)
 PHP_FUNCTION(dcode_qrcode8bit)
 {
     PHP_MN(dcode_qrcode8bit)(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+}
+/** }}} */
+
+/** {{{ DCode::qrcodedata($size, $data, $version = 0, $level = QR_ECLEVEL_L)
+ * Return qrcode string
+ * example: file_put_contents("test.png", DCode::qrcodedata("hello"));
+ */
+PHP_FUNCTION(dcode_qrcodedata)
+{
+    PHP_MN(dcode_qrcodedata)(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 }
 /** }}} */
 
