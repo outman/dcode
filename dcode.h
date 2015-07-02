@@ -30,7 +30,13 @@
 typedef struct _png_mem_encode {
     char *buffer;
     size_t size;
-} png_mem_encode;
+} png_mem_encode ;
+
+static char* dcode_md5(char *, uint, char *);
+static char* dcode_microtime(char *);
+static long dcode_time();
+static void dcode_png_writer(png_structp, png_bytep, png_size_t);
+static char* dcode_write_to_png(QRcode *, int, int, int *);
 
 #endif
 /*
