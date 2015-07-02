@@ -45,7 +45,7 @@ ZEND_DECLARE_MODULE_GLOBALS(dcode)
 
 
 /* True global resources - no need for thread safety here */
-static int le_dcode;
+// static int le_dcode;
 
 zend_class_entry *dcode_ce;
 
@@ -500,13 +500,15 @@ PHP_METHOD(dcode, encrypt)
 
     int box[256];
     int rndkey[256];
-    for (int i = 0; i < 256; i ++) box[i] = i;
-    for (int i = 0; i < 256; i ++) rndkey[i] = (int) cryptkey.c[i%cryptkey.len];
+    int i = 0;
+    for (i = 0; i < 256; i ++) box[i] = i;
+    for (i = 0; i < 256; i ++) rndkey[i] = (int) cryptkey.c[i%cryptkey.len];
 
     smart_str_free(&cryptkey);
 
     int tmp = 0;
-    for (int j = 0, i = 0; i < 256; i++)
+    int j = 0;
+    for (j = 0, i = 0; i < 256; i++)
     {
         j = (j + box[i] + rndkey[i]) % 256;
         tmp = box[i];
@@ -514,8 +516,9 @@ PHP_METHOD(dcode, encrypt)
         box[j] = tmp;
     }
 
+    int a = 0;
     smart_str result = {0};
-    for (int a = 0, i = 0, j = 0; i < new_src.len; i ++)
+    for (a = 0, i = 0, j = 0; i < new_src.len; i ++)
     {
         a = (a + 1) % 256;
         j = (j + box[a]) % 256;
@@ -616,13 +619,15 @@ PHP_METHOD(dcode, decrypt)
 
     int box[256];
     int rndkey[256];
-    for (int i = 0; i < 256; i ++) box[i] = i;
-    for (int i = 0; i < 256; i ++) rndkey[i] = (int) cryptkey.c[i%cryptkey.len];
+    int i = 0;
+    for (i = 0; i < 256; i ++) box[i] = i;
+    for (i = 0; i < 256; i ++) rndkey[i] = (int) cryptkey.c[i%cryptkey.len];
 
     smart_str_free(&cryptkey);
 
     int tmp = 0;
-    for (int j = 0, i = 0; i < 256; i++)
+    int j = 0;
+    for (j = 0, i = 0; i < 256; i++)
     {
         j = (j + box[i] + rndkey[i]) % 256;
         tmp = box[i];
@@ -631,7 +636,8 @@ PHP_METHOD(dcode, decrypt)
     }
 
     smart_str result = {0};
-    for (int a = 0, i = 0, j = 0; i < str_decode_len; i ++)
+    int a = 0;
+    for (a = 0, i = 0, j = 0; i < str_decode_len; i ++)
     {
         a = (a + 1) % 256;
         j = (j + box[a]) % 256;
