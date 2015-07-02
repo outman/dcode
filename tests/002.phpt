@@ -5,7 +5,9 @@ Check for dcode's qrcode functions
 --FILE--
 <?php
 $qrcode = DCode::qrcode("HELLO");
-echo strlen($qrcode);
+echo strlen($qrcode), "\n";
+echo strlen(dcode_qrcode("HELLO"));
 ?>
 --EXPECT--
+238
 238

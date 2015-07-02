@@ -44,6 +44,10 @@ PHP_RINIT_FUNCTION(dcode);
 PHP_RSHUTDOWN_FUNCTION(dcode);
 PHP_MINFO_FUNCTION(dcode);
 
+PHP_FUNCTION(dcode_encrypt);
+PHP_FUNCTION(dcode_decrypt);
+PHP_FUNCTION(dcode_qrcode);
+
 PHP_METHOD(dcode, encrypt);
 PHP_METHOD(dcode, decrypt);
 PHP_METHOD(dcode, qrcode);

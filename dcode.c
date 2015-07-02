@@ -43,23 +43,51 @@
 ZEND_DECLARE_MODULE_GLOBALS(dcode)
 */
 
+
 /* True global resources - no need for thread safety here */
 static int le_dcode;
 
 zend_class_entry *dcode_ce;
+
+/** {{{ ARG_INFO */
+ZEND_BEGIN_ARG_INFO_EX(arginfo_dcode_encrypt, 0, 0, 1)
+    ZEND_ARG_INFO(0, src)
+    ZEND_ARG_INFO(0, key)
+    ZEND_ARG_INFO(0, ck_len)
+    ZEND_ARG_INFO(0, expire)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_dcode_decrypt, 0, 0, 1)
+    ZEND_ARG_INFO(0, src)
+    ZEND_ARG_INFO(0, key)
+    ZEND_ARG_INFO(0, ck_len)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_dcode_qrcode, 0, 0, 1)
+    ZEND_ARG_INFO(0, str_encode)
+    ZEND_ARG_INFO(0, version)
+    ZEND_ARG_INFO(0, level)
+    ZEND_ARG_INFO(0, mode)
+    ZEND_ARG_INFO(0, casesensitive)
+ZEND_END_ARG_INFO()
+
+/** }}} */
 
 /* {{{ dcode_functions[]
  *
  * Every user visible function must have an entry in dcode_functions[].
  */
 const zend_function_entry dcode_functions[] = {
-    PHP_FE_END  /* Must be the last line in dcode_functions[] */
+    PHP_FE(dcode_encrypt, arginfo_dcode_encrypt)
+    PHP_FE(dcode_decrypt, arginfo_dcode_decrypt)
+    PHP_FE(dcode_qrcode, arginfo_dcode_qrcode)
+    PHP_FE_END
 };
 
 const zend_function_entry dcode_methods[] = {
-    PHP_ME(dcode, encrypt, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-    PHP_ME(dcode, decrypt, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-    PHP_ME(dcode, qrcode, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(dcode, encrypt, arginfo_dcode_encrypt, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(dcode, decrypt, arginfo_dcode_decrypt, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(dcode, qrcode, arginfo_dcode_qrcode, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_FE_END
 };
 /* }}} */
@@ -202,7 +230,7 @@ static long dcode_time()
 /** }}} */
 
 /** {{{ dcode_png_writer()
- * function is custom png_write callback function 
+ * function is custom png_write callback function
  * Return void */
 static void dcode_png_writer(png_structp png_ptr, png_bytep data, png_size_t length)
 {

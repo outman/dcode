@@ -7,12 +7,22 @@
 It's based on [QR Code encoder](http://fukuchi.org/works/qrencode/), just use a simple api `QRcode_encodeString`
 ```
 
+## dependencies
+```
+libpng
+```
+
 ## Usage
 
 ```php
 DCode::encrypt($src, $key = "THIS IS SHIT", $ckeylength = 8, $expire = 0);
 DCode::decrypt($src, $key = "THIS IS SHIT", $ckeylength = 8);
 $filecontent = DCode::qrcode("HELLO");
+file_put_contents("test.png", $filecontent);
+||
+dcode_encrypt($src, $key = "THIS IS SHIT", $ckeylength = 8, $expire = 0);
+dcode_decrypt($src, $key = "THIS IS SHIT", $ckeylength = 8);
+$filecontent = dcode_qrcode("HELLO");
 file_put_contents("test.png", $filecontent);
 ```
 
