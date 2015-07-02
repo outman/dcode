@@ -379,8 +379,8 @@ static char* dcode_write_to_png(QRcode *qrcode, int size, int margin, int *pp_le
 
 /** {{{ dcode_qrcode_error(QRcode * TSRMLS_DC)
  *  process qrcode result
- *  Return TRUE or FALSE */
-static bool dcode_qrcode_error(QRcode *qcode TSRMLS_DC) {
+ *  Return TRUE (1) or FALSE (0) */
+static int dcode_qrcode_error(QRcode *qcode TSRMLS_DC) {
     if (qcode == NULL)
     {
         if (errno == EINVAL) {
