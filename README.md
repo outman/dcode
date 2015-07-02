@@ -1,11 +1,11 @@
 # DCode
 
-### It's php extension for encrypt、 decrypt and gen qrcode, then en/decrypt implement algorithm of discuz authcode function, qrcode based on QR Code encoder.
+### It's php extension for encrypt、 decrypt and gen qrcode, the en/decrypt implement algorithm of discuz authcode function, qrcode based on QR Code encoder.
 
 ## QRcode
-```
+
 It's based on [QR Code encoder](http://fukuchi.org/works/qrencode/), just use a simple api `QRcode_encodeString`
-```
+
 
 ## dependencies
 ```
