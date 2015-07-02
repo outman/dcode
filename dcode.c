@@ -697,6 +697,32 @@ PHP_METHOD(dcode, qrcode)
 }
 /** }}} */
 
+/** {{{ DCode::encrypt($src, $sec_key = "THIS IS SHIT", $sec_rand_key_len = 8, $expire = 0)
+    Return False or String */
+PHP_FUNCTION(dcode_encrypt)
+{
+    PHP_MN(dcode_encrypt)(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+}
+/** }}} */
+
+/** {{{ DCode::decrypt($src, $sec_key = "THIS IS SHIT", $sec_rand_key_len = 8)
+    Return False or Success's string */
+PHP_FUNCTION(dcode_decrypt)
+{
+    PHP_MN(dcode_decrypt)(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+}
+/** }}} */
+
+/** {{{ DCode::qrcode($string, $version = 0, $level = QR_ECLEVEL_L, $mode = QR_MODE_KANJI, $casesensitive = 0)
+ * Return qrcode string
+ * example: file_put_contents("test.png", DCode::qrcode("hello"));
+ */
+PHP_FUNCTION(dcode_qrcode)
+{
+    PHP_MN(dcode_qrcode)(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+}
+/** }}} */
+
 /*
  * Local variables:
  * tab-width: 4
