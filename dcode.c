@@ -201,6 +201,9 @@ static long dcode_time()
 }
 /** }}} */
 
+/** {{{ dcode_png_writer()
+ * function is custom png_write callback function 
+ * Return void */
 static void dcode_png_writer(png_structp png_ptr, png_bytep data, png_size_t length)
 {
     png_mem_encode* p = (png_mem_encode*) png_get_io_ptr(png_ptr);
@@ -220,7 +223,11 @@ static void dcode_png_writer(png_structp png_ptr, png_bytep data, png_size_t len
     memcpy(p->buffer + p->size, data, length);
     p->size += length;
 }
+/* }}} */
 
+/** {{{ dcode_write_to_png()
+ * write qrcode struct to memory
+ * Return char* */
 static char* dcode_write_to_png(QRcode *qrcode, int size, int margin, int *pp_len)
 {
 
@@ -324,6 +331,7 @@ static char* dcode_write_to_png(QRcode *qrcode, int size, int margin, int *pp_le
 
     return bin_data;
 }
+/** }}} */
 
 /** {{{ DCode::encrypt($src, $sec_key = "THIS IS SHIT", $sec_rand_key_len = 8, $expire = 0)
     Return False or String */
@@ -606,6 +614,10 @@ PHP_METHOD(dcode, decrypt)
 }
 /** }}} */
 
+/** {{{ DCode::qrcode($string, $version = 0, $level = QR_ECLEVEL_L, $mode = QR_MODE_KANJI, $casesensitive = 0)
+ * Return qrcode string
+ * example: file_put_contents("test.png", DCode::qrcode("hello"));
+ */
 PHP_METHOD(dcode, qrcode)
 {
     char *str_encode;
@@ -655,6 +667,7 @@ PHP_METHOD(dcode, qrcode)
         RETURN_FALSE;
     }
 }
+/** }}} */
 
 /*
  * Local variables:
