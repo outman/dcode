@@ -10,7 +10,7 @@ echo strlen(dcode_qrcode("HELLO")), "\n";
 
 $qrcode = DCode::qrcode8bit("HELLO");
 echo strlen($qrcode), "\n";
-echo strlen(dcode_qrcode8bit("HELLO"));
+echo strlen(dcode_qrcode8bit("HELLO")), "\n";
 $test = "世界,你好!";
 $qrcode = DCode::qrcodedata(strlen($test), $test);
 echo strlen($qrcode), "\n";
@@ -22,5 +22,5 @@ echo strlen(dcode_qrcodedata(strlen($test), $test));
 238
 239
 239
-238
-238
+241
+241
