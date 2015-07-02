@@ -4,7 +4,7 @@
 
 ## QRcode
 
-It's based on [QR Code encoder](http://fukuchi.org/works/qrencode/), just use a simple api `QRcode_encodeString`
+It's based on [QR Code encoder](http://fukuchi.org/works/qrencode/), just use a simple api `QRcode_encodeString`, `QRcode_encodeString8bit`,`QRcode_encodeData`
 
 
 ## dependencies
