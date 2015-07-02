@@ -87,6 +87,7 @@ const zend_function_entry dcode_functions[] = {
     PHP_FE(dcode_encrypt, arginfo_dcode_encrypt)
     PHP_FE(dcode_decrypt, arginfo_dcode_decrypt)
     PHP_FE(dcode_qrcode, arginfo_dcode_qrcode)
+    PHP_FE(dcode_qrcode8bit, arginfo_dcode_qrcode8bit)
     PHP_FE_END
 };
 
@@ -94,6 +95,7 @@ const zend_function_entry dcode_methods[] = {
     PHP_ME(dcode, encrypt, arginfo_dcode_encrypt, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(dcode, decrypt, arginfo_dcode_decrypt, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(dcode, qrcode, arginfo_dcode_qrcode, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(dcode, qrcode8bit, arginfo_dcode_qrcode8bit, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_FE_END
 };
 /* }}} */
