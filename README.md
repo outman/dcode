@@ -9,6 +9,7 @@ It's based on [QR Code encoder](http://fukuchi.org/works/qrencode/), just use a 
 
 ## dependencies
 ```
+php5.4+
 libpng
 ```
 
