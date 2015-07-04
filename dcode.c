@@ -132,27 +132,6 @@ zend_module_entry dcode_module_entry = {
 ZEND_GET_MODULE(dcode)
 #endif
 
-/* {{{ PHP_INI
- */
-/* Remove comments and fill if you need to have entries in php.ini
-PHP_INI_BEGIN()
-    STD_PHP_INI_ENTRY("dcode.global_value",      "42", PHP_INI_ALL, OnUpdateLong, global_value, zend_dcode_globals, dcode_globals)
-    STD_PHP_INI_ENTRY("dcode.global_string", "foobar", PHP_INI_ALL, OnUpdateString, global_string, zend_dcode_globals, dcode_globals)
-PHP_INI_END()
-*/
-/* }}} */
-
-/* {{{ php_dcode_init_globals
- */
-/* Uncomment this function if you have INI entries
-static void php_dcode_init_globals(zend_dcode_globals *dcode_globals)
-{
-    dcode_globals->global_value = 0;
-    dcode_globals->global_string = NULL;
-}
-*/
-/* }}} */
-
 /* {{{ PHP_MINIT_FUNCTION
  */
 PHP_MINIT_FUNCTION(dcode)
@@ -168,9 +147,6 @@ PHP_MINIT_FUNCTION(dcode)
  */
 PHP_MSHUTDOWN_FUNCTION(dcode)
 {
-    /* uncomment this line if you have INI entries
-    UNREGISTER_INI_ENTRIES();
-    */
     return SUCCESS;
 }
 /* }}} */
@@ -199,18 +175,12 @@ PHP_MINFO_FUNCTION(dcode)
 {
     php_info_print_table_start();
     php_info_print_table_header(2, "dcode support", "enabled");
+    php_info_print_table_row(2, "dcode", "Version 0.1.0");
+    php_info_print_table_row(2, "QR Code encoder", "Version 3.4.4");
+    php_info_print_table_row(2, "author", "pochonlee@gmail.com");
     php_info_print_table_end();
-
-    /* Remove comments if you have entries in php.ini
-    DISPLAY_INI_ENTRIES();
-    */
 }
 /* }}} */
-
-
-/* Remove the following function when you have successfully modified config.m4
-   so that your module can be compiled into PHP, it exists only for testing
-   purposes. */
 
 /** {{{ dcode_md5(char *src, uint src_len, char* out)
     Return char* out */
