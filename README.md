@@ -18,19 +18,49 @@ libpng
 ```php
 DCode::encrypt($src, $key = "THIS IS SHIT", $ckeylength = 8, $expire = 0);
 DCode::decrypt($src, $key = "THIS IS SHIT", $ckeylength = 8);
+
+/** 
+* DCode::qrcode($str, $version = 0, $level = QR_ECLEVEL_L, $mode = QR_MODE_KANJI, $casesensitive = 0);
+* @param $str;
+* @param $version = 0;
+* @param $level = QR_ECLEVEL_L;
+* @param $model = QR_MODE_KANJI;
+* @param $casesensitive = 0;
+* @return string
+*/
 $filecontent = DCode::qrcode("HELLO");
 file_put_contents("test.png", $filecontent);
+
+/**
+* DCode::qrcode8bit($str, $version = 0, $level = QR_ECLEVEL_L);
+* @param $str;
+* @param $version = 0;
+* @param $level = QR_ECLEVEL_L;
+* @return string
+*/
 $filecontent = DCode::qrcode8bit("HELLO WORLD");
 file_put_contents("test1.png", $filecontent);
+
+/**
+* DCode::qrcodedata($sizeof, $data, $version = 0, $level = QR_ECLEVEL_L);
+* @param $sizeof
+* @param $data
+* @param $version = 0;
+* @param $level = QR_ECLEVEL_L;
+* @return string
+*/
 $filecontent = DCode::qrcodedata(strlen("HELLO WORLD"), "HELLO WORLD");
 file_put_contents("test2.png", $filecontent);
-||
+
 dcode_encrypt($src, $key = "THIS IS SHIT", $ckeylength = 8, $expire = 0);
 dcode_decrypt($src, $key = "THIS IS SHIT", $ckeylength = 8);
+
 $filecontent = dcode_qrcode("HELLO");
 file_put_contents("test.png", $filecontent);
+
 $filecontent = dcode_qrcode8bit("HELLO 8bit");
 file_put_contents("test1.png", $filecontent);
+
 $filecontent = dcode_qrcodedata(strlen("HELLO 8bit"), "HELLO 8bit");
 file_put_contents("test2.png", $filecontent);
 ```
