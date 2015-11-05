@@ -115,3 +115,17 @@ time php dcode.php   2.19s user 0.08s system 99% cpu 2.278 total
 ```
 MIT
 ```
+
+Error with Ubuntu
+```
+png_create_write_struct in Unknown on line 0 on ubuntu 14
+
+FIX:
+
+create soft link
+sudo ln -s /usr/lib/x86_64-linux-gnu/libpng12.so /usr/lib/x86_64-linux-gnu/libpng.so
+
+Add -L to Makefile
+
+INCLUDES = -I/usr/include/php5 -I/usr/include/php5/main -I/usr/include/php5/TSRM -I/usr/include/php5/Zend -I/usr/include/php5/ext -I/usr/include/php5/ext/date/lib -L/usr/lib/x86_64-linux-gnu -lpng
+```
